@@ -36,7 +36,7 @@ Issues
 
 * Assumes template configs are in /zones/machines
 * Does not populate template config with the contents of compute.yml
-* SmartOS Perl is broken. You'll need to build your own.
+* SmartOS Perl is broken if you install 32bit gcc via pkgin. You'll need to build your own.
 
 Installation
 ============

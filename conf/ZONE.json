@@ -1,0 +1,19 @@
+{
+  "hostname": "HOSTNAME",
+  "alias": "HOSTNAME",
+  "brand": "joyent",
+  "default_gateway": "GATEWAY",
+  "max_physical_memory": "TEMPLATE_RAM",
+  "dns_domain": "DOMAINNAME",
+  "dataset_uuid": "TEMPLATE_DATASET/smartos64",
+  "nics": [
+    {
+      "nic_tag": "NIC_TAG",
+      "model": "virtio",
+      "ip": "IPADDR",
+      "netmask": "NETMASK",
+      "gateway": "GATEWAY",
+      "resolvers": "RESOLVERS"
+    }
+  ]
+}

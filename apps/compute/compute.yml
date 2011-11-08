@@ -1,0 +1,31 @@
+name compute:
+
+node_sizes:
+  small:
+    cpu: 2
+    ram: "1024"
+    data: "102400"
+  medium:
+    cpu: 4
+    ram: "2048"
+    data: "512000"
+  large:
+    cpu: 8
+    ram: "4096"
+    data: "1024000"
+  xlarge:
+    cpu: 12
+    ram: "16384"
+    data: "2048000"
+
+node_config:
+  gateway: "10.70.0.1"
+  netmask: "255.255.0.0"
+  resolvers: "10.70.0.1"
+  data_zpool: "tank/data"
+  template_datasets: "templates"
+
+network_config:
+  min_ip: "10.70.0.2"
+  max_ip: "10.70.256.254"
+  nic_tag: "private"

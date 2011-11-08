@@ -1,0 +1,39 @@
+package Sprawl::App::Command::list;
+use Sprawl::App -command;
+use HTTP::Tiny;
+use JSON;
+use YAML;
+
+=head1 NAME
+
+Sprawl::App::Command::list - list information on all nodes
+
+=cut
+
+sub command_names { qw(list li) }
+
+sub usage_desc { '%c list' }
+
+sub opt_spec {
+}
+
+sub validate_args {
+  my ($self, $opt, $args) = @_;
+  $self->usage_error("No args allowed") if @$args;
+}
+
+sub execute {
+  my ($self, $opt, $args) = @_;
+  my $endpoint = $self->get_config->{endpoint};
+
+  my $response = HTTP::Tiny->new->get("http://$endpoint/node");
+  die $response->{content} unless $response->{success};
+
+  my $json = JSON->new;
+  $json->pretty(1);
+
+  my $out = $json->decode($response->{content});
+  print $json->encode($out);
+}
+
+1;

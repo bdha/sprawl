@@ -1,0 +1,37 @@
+{
+  "hostname": "HOSTNAME",
+  "alias": "HOSTNAME",
+  "brand": "kvm",
+  "vcpus": "TEMPLATE_CPU",
+  "autoboot": true,
+  "ram": "TEMPLATE_RAM",
+  "default_gateway": "GATEWAY",
+  "dns_domain": "DOMAINNAME",
+  "qemu_extra_opts": "\"-no-hpet\"",
+  "disks": [
+    {
+      "boot": true,
+      "model": "virtio",
+      "size": 10240,
+      "image_uuid": "TEMPLATE_DATASET/TEMPLATE",
+      "image_name": "TEMPLATE"
+    },
+    {
+      "boot": false,
+      "model": "virtio",
+      "size": "TEMPLATE_DATA",
+      "zpool": "DATA_ZPOOL",
+      "media": "disk"
+    }
+  ],
+  "nics": [
+    {
+      "nic_tag": "NIC_TAG",
+      "model": "virtio",
+      "ip": "IPADDR",
+      "netmask": "NETMASK",
+      "gateway": "GATEWAY",
+      "resolvers": "RESOLVERS"
+    }
+  ]
+}

@@ -46,7 +46,7 @@ sub execute {
 
   my $content = $json->encode($node);
 
-  my $response = HTTP::Tiny->new->put(
+  my $response = HTTP::Tiny->new->post(
     "http://$endpoint/node/create", {
       content =>  $content,
       headers =>  { 'content-type'  =>  'application/x-json' },

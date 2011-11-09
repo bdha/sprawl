@@ -94,3 +94,8 @@ Now you can go ahead and interface with the API:
     ./sprawl 
     ./sprawl create -s medium -t smartos64 -h happybox -d example.com -s ops1
     ./sprawl list
+
+Author
+======
+
+Bryan Horstmann-Allen <bda@mirrorshades.net>

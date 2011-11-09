@@ -63,12 +63,7 @@ L<compute::Controller::Root>, L<Catalyst>
 
 =head1 AUTHOR
 
-Super-User
-
-=head1 LICENSE
-
-This library is free software. You can redistribute it and/or modify
-it under the same terms as Perl itself.
+Bryan Horstmann-Allen <bda@mirrorshades.net>
 
 =cut
 

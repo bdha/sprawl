@@ -15,13 +15,13 @@ __PACKAGE__->config(
 
 sub node : Local : ActionClass('REST') { }
 
-sub node_PUT {
+sub node_POST {
   my ( $self, $c ) = @_;
-
-  my $node_req = $c->req->data;
 
   my $json = JSON->new;
   $json->pretty(1);
+
+  my $node_req = $c->req->data;
 
   $c->log->info("Creating: $node_req");
 

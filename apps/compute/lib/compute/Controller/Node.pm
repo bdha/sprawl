@@ -111,9 +111,7 @@ sub node_POST {
     $c,
     # XXX CREATE: Fix location return to $uri/node/<UUID>
     location => $c->req->uri->as_string,
-    entity => {
-      node => $node_out,
-    }
+    entity   => $node_out,
   );
 }
 

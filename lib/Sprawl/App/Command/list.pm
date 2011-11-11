@@ -2,7 +2,6 @@ package Sprawl::App::Command::list;
 use Sprawl::App -command;
 use HTTP::Tiny;
 use JSON;
-use YAML;
 
 =head1 NAME
 

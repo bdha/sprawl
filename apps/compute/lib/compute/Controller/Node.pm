@@ -272,14 +272,29 @@ sub node_GET {
     $zones{$zonename}{brand} = $brand;
     $zones{$zonename}{hostname} = $cfg->{attr}->{hostname}->{value};
 
-    # Grab some useful config information from kvm machines. vmadm dumps JSON,
-    # so we need to decode it back to a Perl structure.
-    if ( $brand eq "kvm" && $state eq "running" ) { 
-      my $kvm_json = qx( /usr/sbin/vmadm info $uuid );
-      my $kvm = $json->decode ($kvm_json);
+    if ( $brand eq "kvm" ) {
+      # XXX This is a vmadm bug that should be fixed.
+      # Sometimes vmadmd will get confused as to whether a VM is actually running
+      # or not. It will say the VM is "off" but the zone will actually be
+      # running. Restarting vmadmd is a crappy workaround.
+      my $kvm_state = qx( /usr/sbin/vmadm list -v | grep $uuid | awk '{print \$3}' );
+      chomp $kvm_state;
+  
+      if ( $kvm_state ne "running" && $state eq "running" ) {
+        $c->log->error("KVM state for $uuid is $kvm_state, but the zone is $state! Please restart vmadmd!");
+        #$c->log->error("Restarting vmadm to clear bad kvm/zone state for $uuid");
+        #my $vmadmd_restart = qx( /usr/sbin/svcadm restart vmadmd );
+      }
 
-      $zones{$zonename}{vnc} = $kvm->{vnc};
-      $zones{$zonename}{chardev} = $kvm->{chardev};
+      # Grab some useful config information from kvm machines. vmadm dumps JSON,
+      # so we need to decode it back to a Perl structure.
+      if ( $kvm_state eq "running" ) { 
+        my $kvm_json = qx( /usr/sbin/vmadm info $uuid );
+        my $kvm = $json->decode ($kvm_json);
+
+        $zones{$zonename}{vnc} = $kvm->{vnc};
+        $zones{$zonename}{chardev} = $kvm->{chardev};
+      }
     }
   }
   

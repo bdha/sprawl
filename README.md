@@ -24,6 +24,7 @@ Perl modules:
 * XML::Simple
 * String::Random
 * App::Cmd::Simple
+* Text::Table
 
 Limitations
 ===========

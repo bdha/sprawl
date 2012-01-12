@@ -23,7 +23,7 @@ sub node_POST {
 
   my $node_req = $c->req->data;
 
-  $c->log->info("Creating: $node_req");
+  $c->log->info("Processing new create request");
 
   my $template_file;
   if ( $node_req->{template} eq "smartos64" ) {
@@ -65,7 +65,10 @@ sub node_POST {
     $new_node->{max_locked_memory}    = $node_ram;
   }
 
-  $new_node->{nics}[0]->{ip} = allocate_ip();
+  my $new_ip = allocate_ip();
+  $new_node->{nics}[0]->{ip} = $new_ip;
+  $c->log->info("Allocating $new_ip");
+
   $new_node->{hostname} = $node_req->{hostname};
   $new_node->{alias}    = $node_req->{hostname};
 
@@ -78,20 +81,30 @@ sub node_POST {
   print NODE_TEMP_CONFIG $json_out;
   close (NODE_TEMP_CONFIG);
 
-  # XXX CREATE: Error checking!
   # XXX CREATE: Add timing check, so we can say "time to build, time to boot", etc.
-  my $create_machine = qx( /usr/sbin/create-machine -f /var/tmp/$tmp_file.json | tail -1 );
-  my $machine_in = $json->decode( $create_machine );
+  # 
+  # Need to redirect output until this bug is fixed:
+  # https://github.com/joyent/smartos-live/issues/36
+  my $vmadm = qx( /usr/sbin/vmadm create < /var/tmp/$tmp_file.json 2>&1 );
+  chomp $vmadm;
 
-  if ( defined $machine_in->{error} ) {
-    # XXX syslog or store the stacktrace: $machine_in->{error}->{error}->{stack}
-    my $stderr = $machine_in->{error}->{error}->{stderr};
-    my $stack  = $machine_in->{error}->{error}->{stack};
-    $c->log->error("create-machine failed:\n$stderr");
-    $c->log->debug("create-machine stacktrace:\n$stack");
+  $c->log->info("vmadm: $vmadm");
+
+  my $error;
+  my $uuid;
+
+  if ( $? eq 1 ) { 
+    $error = $vmadm;
+  }
+  else {
+    my @vmadm = split(/ /,$vmadm);  
+    $uuid = $vmadm[2];
+  }
+
+  if ( $error ) {
     return $self->status_bad_request(
       $c,
-      message => $stderr,
+      message => $error,
     );
   }
 
@@ -99,13 +112,14 @@ sub node_POST {
   # XXX CREATE:   No? Why? Tail the log, and return the last line as an error message.
 
   my $node_out;
-  $node_out->{status}   = $machine_in->{type};
-  $node_out->{uuid}     = $machine_in->{uuid};
+  $node_out->{uuid}     = $uuid;
   $node_out->{ipaddr}   = $new_node->{nics}[0]->{ip};
   $node_out->{size}     = $size;
   $node_out->{template} = $node_req->{template};
+  $node_out->{status}   = "success";
+  $node_out->{action}   = "create";
 
-  $c->log->info("Created: $node_out");
+  $c->log->info("Created: $uuid");
 
   $self->status_created(
     $c,
@@ -119,6 +133,8 @@ sub node_DELETE {
   my ( $self, $c, $uuid ) = @_;
 
   $c->log->info("Destroying $uuid");
+
+  my $error;
 
   my $brand = qx( /usr/sbin/zonecfg -z $uuid info brand | awk '{print \$2}' );
   chomp $brand;
@@ -162,13 +178,32 @@ sub node_DELETE {
     my $delete_zone = qx( /usr/sbin/zonecfg -z $uuid delete -F );
   }
   else {
-    # XXX DELETE: Error checking on "vmadm destroy" output
-    my $destroy_kvm = qx( /usr/sbin/vmadm destroy $uuid );
+    my $destroy_kvm = qx( /usr/sbin/vmadm destroy $uuid 2>&1 );
+
+    if ( $? eq 1 ) {
+      chomp $destroy_kvm;
+      return $self->status_bad_request(
+        $c,
+        message => $destroy_kvm,
+      );
+    }
+
+    chomp $destroy_kvm;
+    
+    # XXX WORKAROUND for https://github.com/joyent/smartos-live/issues/39
+    my $data_vol = qx( zfs list -H tank/data/$uuid-disk1 );
+    if ( $? eq 0 ) {
+      my $destroy_data_vol = qx( /usr/sbin/zfs destroy tank/data/$uuid-disk1 );
+      my $delete_zonecfg = qx( /usr/sbin/zonecfg -z $uuid delete -F );
+      $c->log->info("WORKAROUND: destroying tank/data/$uuid-tank1 $destroy_data_vol" );
+      $c->log->info("WORKAROUND: deleting zonecfg for $uuid $delete_zonecfg" );
+    }
   }
 
   $self->status_ok(
     $c,
     entity => {
+      action  => "destroy",
       uuid    => $uuid,
       message => "destroyed $uuid",
       status  => "success"
@@ -277,7 +312,7 @@ sub node_GET {
       # Sometimes vmadmd will get confused as to whether a VM is actually running
       # or not. It will say the VM is "off" but the zone will actually be
       # running. Restarting vmadmd is a crappy workaround.
-      my $kvm_state = qx( /usr/sbin/vmadm list -v | grep $uuid | awk '{print \$3}' );
+      my $kvm_state = qx( /usr/sbin/vmadm list -v | grep $uuid | awk '{print \$4}' );
       chomp $kvm_state;
   
       if ( $kvm_state ne "running" && $state eq "running" ) {

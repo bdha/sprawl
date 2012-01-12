@@ -97,8 +97,7 @@ sub node_POST {
     $error = $vmadm;
   }
   else {
-    my @vmadm = split(/ /,$vmadm);  
-    $uuid = $vmadm[2];
+    $uuid = (split(/ /,$vmadm))[2];
   }
 
   if ( $error ) {

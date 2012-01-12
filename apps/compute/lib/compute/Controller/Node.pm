@@ -211,7 +211,7 @@ sub node_DELETE {
 }
 
 sub node_GET {
-  my ( $self, $c, $uuid ) = @_;
+  my ( $self, $c, $uuid_in ) = @_;
 
   my @out;
   my @zones;
@@ -220,8 +220,8 @@ sub node_GET {
   my $json = JSON->new->allow_nonref;
   $json->pretty(1);
   
-  if ( $uuid ) { 
-    @zones = qx( /usr/sbin/zoneadm -z $uuid list -p );
+  if ( $uuid_in ) { 
+    @zones = qx( /usr/sbin/zoneadm -z $uuid_in list -p );
   }
   else {
     @zones = qx( /usr/sbin/zoneadm list -pc | grep -v global );
@@ -307,28 +307,24 @@ sub node_GET {
     $zones{$zonename}{hostname} = $cfg->{attr}->{hostname}->{value};
 
     if ( $brand eq "kvm" ) {
-      # XXX This is a vmadm bug that should be fixed.
-      # Sometimes vmadmd will get confused as to whether a VM is actually running
-      # or not. It will say the VM is "off" but the zone will actually be
-      # running. Restarting vmadmd is a crappy workaround.
-      my $kvm_state = qx( /usr/sbin/vmadm list -v | grep $uuid | awk '{print \$4}' );
-      chomp $kvm_state;
+      # XXX vmadm list is pathologically slow.
+      # See: https://github.com/joyent/smartos-live/issues/42
+      #my $kvm_state = qx( /usr/sbin/vmadm list -v | grep $uuid | awk '{print \$4}' );
+      #chomp $kvm_state;
   
-      if ( $kvm_state ne "running" && $state eq "running" ) {
-        $c->log->error("KVM state for $uuid is $kvm_state, but the zone is $state! Please restart vmadmd!");
-        #$c->log->error("Restarting vmadm to clear bad kvm/zone state for $uuid");
-        #my $vmadmd_restart = qx( /usr/sbin/svcadm restart vmadmd );
-      }
+      #if ( $kvm_state ne "running" && $state eq "running" ) {
+        #$c->log->error("KVM state for $uuid is $kvm_state, but the zone is $state! Please restart vmadmd!");
+      #}
 
       # Grab some useful config information from kvm machines. vmadm dumps JSON,
       # so we need to decode it back to a Perl structure.
-      if ( $kvm_state eq "running" ) { 
+      ##if ( $kvm_state eq "running" ) { 
         my $kvm_json = qx( /usr/sbin/vmadm info $uuid );
         my $kvm = $json->decode ($kvm_json);
 
         $zones{$zonename}{vnc} = $kvm->{vnc};
         $zones{$zonename}{chardev} = $kvm->{chardev};
-      }
+      ##}
     }
   }
   

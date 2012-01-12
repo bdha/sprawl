@@ -42,7 +42,7 @@ Issues
 Installation
 ============
 
-Install SmartOS on a system (henceforce referred to as "the compute node") and configure it with stable storage.
+Boot SmartOS on a system (henceforce referred to as "the compute node") and configure it with stable storage.
 
 Install the required Perl modules.
 

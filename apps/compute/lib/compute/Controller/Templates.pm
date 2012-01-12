@@ -20,12 +20,13 @@ sub templates_GET {
   my %templates;
 
   my @templates = qx( /sbin/zfs list -Ho name -r zones/templates | grep -v "zones/templates\$" );
-  foreach my $template ( @templates ) {
-    chomp $template;
+  foreach my $template_path ( @templates ) {
+    chomp $template_path;
+    my $template_name = (split(/\//,$template_path))[-1];
     foreach my $property ( qw/ volsize used / ) {
-      my $value = qx( /sbin/zfs get -Ho value $property $template );
+      my $value = qx( /sbin/zfs get -Ho value $property $template_path );
       chomp $value;
-      $templates{templates}{$template}->{$property} = $value;
+      $templates{templates}{$template_name}->{$property} = $value;
     }
   }
 
